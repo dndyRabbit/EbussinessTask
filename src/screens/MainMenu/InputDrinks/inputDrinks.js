@@ -16,6 +16,23 @@ import storage from '@react-native-firebase/storage';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Input} from 'react-native-elements';
+import MultiSelect from 'react-native-multiple-select';
+import {ScrollView} from 'react-native';
+
+const tags = [
+  {
+    id: 1,
+    name: 'favorite',
+  },
+  {
+    id: 2,
+    name: 'promos',
+  },
+  {
+    id: 3,
+    name: 'combo',
+  },
+];
 
 const InputDrinks = ({navigation}) => {
   const {user} = useContext(AuthContext);
@@ -25,6 +42,11 @@ const InputDrinks = ({navigation}) => {
   const [title, setTitle] = useState(null);
   const [price, setPrice] = useState(null);
   const [about, setAbout] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+
+  const onSelectedItemsChange = selectedItems => {
+    setSelectedTags(selectedItems);
+  };
 
   const pickPhotos = () => {
     ImagePicker.openPicker({
@@ -44,8 +66,10 @@ const InputDrinks = ({navigation}) => {
         userId: user.uid,
         title,
         about,
+        price,
         postImg: imageUrl,
         postTime: firestore.Timestamp.fromDate(new Date()),
+        tags: selectedTags,
       })
       .then(() => {
         Alert.alert(
@@ -56,6 +80,7 @@ const InputDrinks = ({navigation}) => {
         setAbout(null);
         setImage(null);
         setPrice(null);
+        setSelectedTags([]);
       })
       .catch(error => {
         console.log('Something wrong when post to firebase.', error);
@@ -130,12 +155,17 @@ const InputDrinks = ({navigation}) => {
     );
   };
 
+  React.useEffect(() => {
+    console.log(selectedTags);
+  }, [selectedTags]);
+
   function renderInputContent() {
     return (
       <View
         style={{
           width: SIZES.width,
           padding: SIZES.padding * 2,
+          paddingBottom: 60,
         }}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -202,6 +232,38 @@ const InputDrinks = ({navigation}) => {
             fontSize: 14,
           }}
           onChangeText={value => setPrice(value)}
+        />
+
+        <MultiSelect
+          items={tags}
+          uniqueKey="name"
+          onSelectedItemsChange={onSelectedItemsChange}
+          selectedItems={selectedTags}
+          selectText="Tags"
+          searchInputPlaceholderText="Search tags..."
+          onChangeInput={text => console.log(text)}
+          tagRemoveIconColor={COLORS.button}
+          tagBorderColor={COLORS.button}
+          tagTextColor="#CCC"
+          selectedItemTextColor={COLORS.button}
+          selectedItemIconColor={COLORS.button}
+          itemTextColor="#000"
+          displayKey="name"
+          searchInputStyle={{color: '#CCC'}}
+          submitButtonColor={COLORS.button}
+          submitButtonText="Submit"
+          styleDropdownMenu={{
+            width: '93%',
+            marginLeft: 10,
+            marginTop: -15,
+          }}
+          styleTextDropdown={{marginLeft: 10, fontStyle: 'italic'}}
+          styleSelectorContainer={{
+            width: '93%',
+            marginLeft: 10,
+            marginTop: -15,
+          }}
+          styleItemsContainer={{width: '100%'}}
         />
 
         {/* Foto Produk */}
@@ -287,7 +349,6 @@ const InputDrinks = ({navigation}) => {
               borderColor: COLORS.button,
               borderRadius: 3,
               alignSelf: 'center',
-              marginTop: 40,
             }}>
             <View
               style={{
@@ -318,7 +379,7 @@ const InputDrinks = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container}>
       <RenderBackground />
-      {renderInputContent()}
+      <ScrollView>{renderInputContent()}</ScrollView>
     </SafeAreaView>
   );
 };

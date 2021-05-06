@@ -45,7 +45,13 @@ export const AuthProvider = ({children}) => {
                     email: auth().currentUser.email,
                     createdAt: firestore.Timestamp.fromDate(new Date()),
                     userImg: null,
+                    location: null,
+                    phone: '',
                   });
+                Alert.alert(
+                  'Registrasi Berhasil',
+                  'Selamat datang di thinktop!',
+                );
               });
           } catch (error) {
             if (error.code === 'auth/email-already-in-use') {

@@ -2,10 +2,14 @@ import React, {useContext, useState, useEffect} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {AuthContext} from './AuthProvider';
 
+import {ActivityIndicator, View} from 'react-native';
+
+import AsyncStorage from '@react-native-community/async-storage';
+
 import auth from '@react-native-firebase/auth';
 
 import AuthStack from './AuthStack';
-import AppStack from './AppStack';
+import TabsStack from './BottomStack';
 
 const Routes = () => {
   const [initializing, setInitializing] = useState(true);
@@ -24,7 +28,7 @@ const Routes = () => {
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {user ? <TabsStack /> : <AuthStack />}
     </NavigationContainer>
   );
 };
