@@ -48,6 +48,24 @@ const CardMenu = ({item, onDelete, onModal}) => {
         style={{width: 80, height: 80, borderRadius: 80 / 2, marginBottom: 5}}
         resizeMode="cover"
       />
+
+      {item.tags[0] === 'promos' ? (
+        <Icon
+          name="sale"
+          size={25}
+          color={COLORS.button}
+          style={{position: 'absolute', left: 0, top: 0}}
+        />
+      ) : null}
+      {item.tags[0] === 'favorite' ? (
+        <Icon
+          name="heart"
+          size={25}
+          color="#cf0000"
+          style={{position: 'absolute', bottom: 50, right: 60}}
+        />
+      ) : null}
+
       <LinearGradient
         start={{x: 0, y: 0}}
         end={{x: 1, y: 0}}

@@ -77,6 +77,7 @@ const Register = ({navigation}) => {
           value={password}
           placeholder="Password"
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          secureTextEntry
           style={{
             width: '100%',
             height: 40,

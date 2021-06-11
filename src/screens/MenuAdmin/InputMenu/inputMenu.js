@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import {images, COLORS, SIZES} from '../../../constants';
 import {AuthContext} from '../../../AppNavigator/AuthProvider';
@@ -17,7 +18,6 @@ import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {Input} from 'react-native-elements';
 import MultiSelect from 'react-native-multiple-select';
-import {ScrollView} from 'react-native';
 
 const tags = [
   {
@@ -34,7 +34,7 @@ const tags = [
   },
 ];
 
-const InputDrinks = ({navigation}) => {
+const InputMenu = ({navigation}) => {
   const {user} = useContext(AuthContext);
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -391,4 +391,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default InputDrinks;
+export default InputMenu;

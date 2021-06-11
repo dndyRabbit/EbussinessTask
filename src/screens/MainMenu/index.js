@@ -1,20 +1,32 @@
 import Home from './home';
-import {Drinks} from './DrinksMenu';
-import {InputDrinks} from './InputDrinks';
-import {Kulkas} from './KulkasPenyimpanan';
-import {userProfiles, locationMaps} from './Profiles';
+import {
+  Drinks,
+  Kulkas,
+  Checkout,
+  FinishPayment,
+  VerificationPayment,
+} from './DrinksMenu';
+import {userProfiles, locationMaps, Profile, AlamatMaps} from './Profiles';
 import ChatTest from './chatTesting';
-import Friends from './friends';
+import Inbox from './Inbox';
 import {Explore} from './Explore';
+import {OrderDone, OnGoing, Failed} from './Booking';
 
 export {
   Home,
   Drinks,
-  InputDrinks,
-  Kulkas,
   userProfiles,
   ChatTest,
-  Friends,
+  Inbox,
   Explore,
   locationMaps,
+  Kulkas,
+  Checkout,
+  FinishPayment,
+  Profile,
+  AlamatMaps,
+  VerificationPayment,
+  OrderDone,
+  OnGoing,
+  Failed,
 };

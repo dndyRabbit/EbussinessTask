@@ -78,33 +78,31 @@ const Home = ({navigation}) => {
       <>
         {user.uid === 'beQY3fpLGmQQCtuNUeXkzJGG8bn1' ? (
           <TouchableOpacity
-            onPress={() => navigation.navigate('InputDrinks')}
+            onPress={() => navigation.navigate('AdminStack')}
             style={{
-              transform: [{rotate: '45deg'}, {translateX: 60}],
               borderWidth: 1,
               borderColor: COLORS.button,
-              width: 60,
-              height: 60,
+              width: '70%',
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: 5,
               position: 'absolute',
-              bottom: 150,
-              right: 60,
+              bottom: 100,
+              alignSelf: 'center',
+              padding: 10,
             }}>
             <View
               style={{
                 alignItems: 'center',
                 justifyContent: 'center',
-                transform: [{rotate: '-45deg'}],
               }}>
               <Icon name="database-import" size={25} color={COLORS.secondary} />
               <Text
                 style={{
                   color: COLORS.secondary,
-                  fontSize: 8,
+                  fontSize: 14,
                 }}>
-                Input
+                Menu Admin {'(Admin Only)'}
               </Text>
             </View>
           </TouchableOpacity>
@@ -209,20 +207,14 @@ const Home = ({navigation}) => {
             <Text style={{fontSize: 16, color: COLORS.secondary}}>
               Rp.{item.price}
             </Text>
-            {item.tags[1] ? (
+            {item.tags[0] === 'favorite' ? (
               <Icon
-                name="sale"
-                size={30}
-                color="#ff8303"
-                style={{position: 'absolute', bottom: 60, left: 0}}
+                name="heart"
+                size={25}
+                color="#cf0000"
+                style={{position: 'absolute', bottom: 5, right: 5}}
               />
             ) : null}
-            <Icon
-              name="heart"
-              size={25}
-              color="#cf0000"
-              style={{position: 'absolute', bottom: 5, right: 5}}
-            />
           </LinearGradient>
         </View>
       );
@@ -297,30 +289,6 @@ const Home = ({navigation}) => {
         }}
         resizeMode="contain"
       />
-
-      {/* logout */}
-      <TouchableOpacity
-        onPress={() => logout()}
-        style={{
-          borderWidth: 1,
-          borderColor: COLORS.button,
-          width: 60,
-          height: 30,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 5,
-          position: 'absolute',
-          top: 0,
-          right: 0,
-        }}>
-        <Text
-          style={{
-            color: COLORS.secondary,
-            fontSize: 12,
-          }}>
-          Logout
-        </Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };

@@ -77,6 +77,7 @@ const Login = ({navigation}) => {
           onChangeText={value => onChangePassword(value)}
           value={password}
           placeholder="Password"
+          secureTextEntry
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
           style={{
             width: '100%',

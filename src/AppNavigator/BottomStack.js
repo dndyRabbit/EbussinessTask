@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useLayoutEffect, useContext, useState} from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,21 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {images, SIZES, COLORS} from '../constants';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {createStackNavigator} from '@react-navigation/stack';
+import {Profile, Explore, Drinks, Inbox} from '../screens';
 import HomeStack, {
   ExploreStack,
   MenuStack,
-  FridgeStack,
+  GetLocationStack,
   ProfileStack,
+  BookingTopStack,
 } from './AppStack';
+import AdminStack from './AdminStack';
 
 const Tab = createBottomTabNavigator();
+
+const Stack = createStackNavigator();
 
 const TabBarCustomButton = ({accessibilityState, children, onPress}) => {
   var isSelected = accessibilityState.selected;
@@ -63,7 +68,21 @@ const TabBarCustomButton = ({accessibilityState, children, onPress}) => {
   }
 };
 
-const TabsStack = () => {
+const AppStack = () => {
+  return (
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Home" component={TabsStack} />
+      <Stack.Screen name="Kulkas" component={MenuStack} />
+      <Stack.Screen name="Explore" component={ExploreStack} />
+      <Stack.Screen name="userProfiles" component={ProfileStack} />
+      <Stack.Screen name="Delivery" component={BookingTopStack} />
+      <Stack.Screen name="AlamatMaps" component={GetLocationStack} />
+      <Stack.Screen name="AdminStack" component={AdminStack} />
+    </Stack.Navigator>
+  );
+};
+
+export const TabsStack = () => {
   return (
     <Tab.Navigator
       tabBarOptions={{
@@ -109,7 +128,7 @@ const TabsStack = () => {
 
       <Tab.Screen
         name="Menu"
-        component={MenuStack}
+        component={Drinks}
         options={{
           tabBarIcon: ({focused}) => (
             <Icon
@@ -136,7 +155,7 @@ const TabsStack = () => {
 
       <Tab.Screen
         name="Explore"
-        component={ExploreStack}
+        component={Explore}
         options={{
           tabBarIcon: ({focused}) => (
             <Icon
@@ -162,12 +181,12 @@ const TabsStack = () => {
       />
 
       <Tab.Screen
-        name="Fridge"
-        component={FridgeStack}
+        name="Inbox"
+        component={Inbox}
         options={{
           tabBarIcon: ({focused}) => (
             <Icon
-              name="fridge-top"
+              name="book"
               size={focused ? 25 : 30}
               color={focused ? '#F6A545' : '#fff'}
               style={{marginTop: focused ? -5 : 0}}
@@ -182,15 +201,15 @@ const TabsStack = () => {
                 textAlign: 'center',
                 marginBottom: focused ? 5 : -10,
               }}>
-              Fridge
+              Booking
             </Text>
           ),
         }}
       />
 
       <Tab.Screen
-        name="Profiles"
-        component={ProfileStack}
+        name="Profile"
+        component={Profile}
         options={{
           tabBarIcon: ({focused}) => (
             <Icon
@@ -218,4 +237,4 @@ const TabsStack = () => {
   );
 };
 
-export default TabsStack;
+export default AppStack;

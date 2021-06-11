@@ -23,9 +23,9 @@ const userProfiles = ({navigation, route}) => {
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [transferred, setTransferred] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const {user} = useContext(AuthContext);
+  const {user, logout} = useContext(AuthContext);
 
   useEffect(() => {
     setLoading(false);
@@ -119,11 +119,8 @@ const userProfiles = ({navigation, route}) => {
 
     try {
       await task;
-
       const url = await storageRef.getDownloadURL();
-
       setUploading(false);
-
       return url;
     } catch (e) {
       console.log(e);
@@ -311,31 +308,6 @@ const userProfiles = ({navigation, route}) => {
             fontSize: 14,
           }}
         />
-        <TouchableOpacity
-          onPress={() => navigation.navigate('locationMaps')}
-          style={{
-            width: 170,
-            height: 40,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: COLORS.button,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 5,
-            flexDirection: 'row',
-            marginLeft: 20,
-          }}>
-          <Icon name="map-marker-radius" size={20} color={COLORS.button} />
-          {userData.mapLocation ? (
-            <Text style={{color: COLORS.button, fontSize: 12}}>
-              Current Location is Set
-            </Text>
-          ) : (
-            <Text style={{color: COLORS.button, fontSize: 12}}>
-              Get Current Location
-            </Text>
-          )}
-        </TouchableOpacity>
 
         {uploading ? (
           <View style={{alignSelf: 'center'}}>
@@ -392,7 +364,32 @@ const userProfiles = ({navigation, route}) => {
   return (
     <SafeAreaView style={styles.container}>
       <RenderBackground />
-      {renderUpdateProfiles()}
+      <ScrollView>
+        {renderUpdateProfiles()}
+        {/* logout */}
+        <TouchableOpacity
+          onPress={() => logout()}
+          style={{
+            borderWidth: 1,
+            borderColor: COLORS.button,
+            width: 60,
+            height: 30,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 5,
+            position: 'absolute',
+            top: 20,
+            right: 20,
+          }}>
+          <Text
+            style={{
+              color: COLORS.secondary,
+              fontSize: 12,
+            }}>
+            Logout
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -403,5 +400,4 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
 });
-
 export default userProfiles;

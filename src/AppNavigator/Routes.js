@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 import auth from '@react-native-firebase/auth';
 
 import AuthStack from './AuthStack';
-import TabsStack from './BottomStack';
+import AppStack from './BottomStack';
 
 const Routes = () => {
   const [initializing, setInitializing] = useState(true);
@@ -28,7 +28,7 @@ const Routes = () => {
 
   return (
     <NavigationContainer>
-      {user ? <TabsStack /> : <AuthStack />}
+      {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 };

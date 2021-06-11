@@ -1,4 +1,4 @@
-import React, {useState, useContext, useEffect} from 'react';
+import React, {useState, useContext, useEffect, useLayoutEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import {
   Text,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import {images, COLORS, SIZES} from '../../../constants';
 import {CardMenu} from '../../Components';
@@ -17,34 +18,67 @@ import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {AuthContext} from '../../../AppNavigator/AuthProvider';
+import {useSelector, useDispatch} from 'react-redux';
+import {takeOutlet} from '../../../redux';
+
+const orderVia = [
+  {
+    name: 'Pickup',
+  },
+  {
+    name: 'Delivery',
+  },
+];
 
 const Drinks = ({navigation}) => {
-  const [modalVisible, setModalVisible] = useState(false);
   const [menu, setMenu] = useState([]);
+
   const [loading, setLoading] = useState(true);
-  const [deleted, setDeleted] = useState(false);
+
   const [listPayment, setListPaymnet] = useState([]);
   const [orderItems, setOrderItems] = useState([]);
   const [filters, setFilters] = useState([]);
+  const [outlets, setOutlets] = useState([]);
+  const [orders, setOrders] = useState([]);
+
+  const [selectedOutlet, setSelectedOutlet] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState('all');
+  const [selectedVia, setSelectedVia] = useState('');
   const [filterData, setFilterData] = useState(menu);
-  const [count, setCount] = useState(0);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [outletVisible, setOutletVisible] = useState(false);
+
+  const [uploading, setUploading] = useState(false);
+
+  const [bg, setBg] = useState(false);
 
   const {user} = useContext(AuthContext);
 
+  const dispatch = useDispatch();
+
+  const {data} = useSelector(state => state.OutletReducer);
+
   let total = orderItems.reduce((a, b) => a + b.total || 0, 0);
+
+  let totalQty = orders.reduce((a, b) => a + b.quantity || 0, 0);
+  let totalPrice = orders.reduce((a, b) => a + b.totalPrice || 0, 0);
 
   let quantityItem = total / listPayment.price;
 
   useEffect(() => {
+    console.log(loading);
+    console.log(uploading);
+    fetchOutlet();
     fetchFilters();
-    setLoading(false);
-    fetchSizeFridge();
     fetchPost();
-    setDeleted(false);
-    setFilterData(menu);
-  }, [deleted, loading]);
+    navigation.addListener('focus', () => setLoading(!loading));
+    return () => {
+      fetchOrders();
+    };
+  }, [loading, navigation]);
 
+  //select categories favorite, promos dll
   function onSelectCategories(category) {
     //filter restaurant
     if (category !== 'all') {
@@ -53,6 +87,21 @@ const Drinks = ({navigation}) => {
       setFilterData(menu);
     }
     setSelectedCategories(category);
+    setBg(true);
+  }
+
+  //select outlet thinktop
+  function onSelectOutlet(outlet) {
+    //filter restaurant
+    console.log(outlet);
+    setSelectedOutlet(outlet);
+  }
+
+  //select pickup or Order
+  function onSelectVia(via) {
+    //filter restaurant
+    console.log(via);
+    setSelectedVia(via);
   }
 
   // Edit Quantity order
@@ -97,6 +146,54 @@ const Drinks = ({navigation}) => {
     }
     return 0;
   }
+
+  //ambil data dari keranjang
+  const fetchOrders = async () => {
+    const list = [];
+    await firestore()
+      .collection('shopping_cart')
+      .where('userId', '==', user.uid)
+      .orderBy('orderTime', 'desc')
+      .onSnapshot(querySnapshot => {
+        querySnapshot.forEach(doc => {
+          const {quantity, totalPrice} = doc.data();
+          list.push({
+            quantity,
+            totalPrice,
+          });
+        });
+        setOrders(list);
+      });
+  };
+
+  //fetch outlet thinktop
+  const fetchOutlet = async () => {
+    try {
+      const list = [];
+      await firestore()
+        .collection('outlets')
+        .get()
+        .then(querySnapshot => {
+          querySnapshot.forEach(doc => {
+            const {
+              coordinate,
+              description,
+              rating,
+              review,
+              title,
+              alamat,
+            } = doc.data();
+            list.push({coordinate, description, rating, review, title, alamat});
+          });
+          setOutlets(list);
+          if (loading) {
+            setLoading(false);
+          }
+        });
+    } catch (error) {
+      console.log('failed fetch fitlers', error);
+    }
+  };
 
   //fetch filters data
   const fetchFilters = async () => {
@@ -151,24 +248,8 @@ const Drinks = ({navigation}) => {
             });
           });
           setMenu(list);
-
-          if (loading) {
-            setLoading(false);
-          }
         });
     } catch (error) {}
-  };
-
-  //fetch size of fridge
-  const fetchSizeFridge = async () => {
-    await firestore()
-      .collection('orders')
-      .where('userId', '==', user.uid)
-      .orderBy('orderTime', 'desc')
-      .get()
-      .then(querySnapshot => {
-        setCount(querySnapshot.size);
-      });
   };
 
   //delete fitur untuk menghapus menu (only admin)
@@ -210,7 +291,9 @@ const Drinks = ({navigation}) => {
               .then(() => {
                 console.log(`${postImg} has been deleted!`);
                 deleteFirestore(menuId);
-                setDeleted(true);
+                if (loading) {
+                  setLoading(false);
+                }
               })
               .catch(e => console.log('Error while deleting image', e));
           } else {
@@ -248,10 +331,23 @@ const Drinks = ({navigation}) => {
       });
   };
 
+  //open outlet modal
+  const outletCheck = () => {
+    setOutletVisible(true);
+  };
+
+  // store data outlet to redux
+  const storeDataOutlet = (via, outlet) => {
+    console.log(via, '', outlet);
+    dispatch(takeOutlet(via, outlet));
+    setOutletVisible(!outletVisible);
+  };
+
   //create new order to firestore
   const toShoppingCart = async () => {
+    setUploading(true);
     await firestore()
-      .collection('orders')
+      .collection('shopping_cart')
       .add({
         userId: user.uid,
         title: listPayment.title,
@@ -266,9 +362,9 @@ const Drinks = ({navigation}) => {
           'Masuk ke kulkas :D',
           'Your Order has been created to the Firestore Successfully!',
         );
+        setUploading(false);
         setOrderItems([]);
         setModalVisible(!modalVisible);
-        setDeleted(true);
       })
       .catch(e => {
         console.log('Something wrong: ', e);
@@ -312,52 +408,29 @@ const Drinks = ({navigation}) => {
           flexDirection: 'row',
           alignItems: 'center',
         }}>
-        {/* item in fridge */}
-        {count ? (
-          <View
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              width: 20,
-              height: 20,
-              borderRadius: 20 / 2,
-              backgroundColor: '#ce1212',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Text
-              style={{
-                fontSize: 14,
-                color: '#fff',
-                fontWeight: 'bold',
-              }}>
-              {count}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* keranjang */}
-        <TouchableOpacity
-          style={{position: 'absolute', right: 10, top: 10}}
-          onPress={() => navigation.navigate('Kulkas')}>
-          <Icon name="fridge" size={30} color={COLORS.button} />
-        </TouchableOpacity>
-
         <Icon
           name="store-outline"
           size={30}
           color={COLORS.button}
           style={{margin: 15}}
         />
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => outletCheck()}>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               marginBottom: 5,
             }}>
-            <Text style={{fontSize: 12, color: COLORS.secondary}}>Pickup </Text>
+            <Text style={{fontSize: 12, color: COLORS.secondary}}>
+              {data.via ? (
+                data.via
+              ) : (
+                <Text
+                  style={{color: '#aaaaaa', fontSize: 12, fontStyle: 'italic'}}>
+                  Via
+                </Text>
+              )}{' '}
+            </Text>
             <Text style={{fontWeight: '700', color: COLORS.secondary}}>
               984.5 M ~ Dari{' '}
             </Text>
@@ -368,11 +441,19 @@ const Drinks = ({navigation}) => {
               alignItems: 'center',
               width: '85%',
             }}>
-            <Text style={{color: '#f8f5f1', fontSize: 12}}>OUTLET TUTUP </Text>
+            <Text style={{color: '#f8f5f1', fontSize: 12}}>OUTLET BUKA </Text>
             <Text
               style={{color: '#f8f5f1', fontSize: 16, fontWeight: 'bold'}}
               numberOfLines={1}>
-              ~ ThinkTop Cipulir{' '}
+              ~{' '}
+              {data.outlet ? (
+                data.outlet.title
+              ) : (
+                <Text
+                  style={{color: '#aaaaaa', fontSize: 16, fontStyle: 'italic'}}>
+                  Pilih Outlet
+                </Text>
+              )}{' '}
             </Text>
           </View>
           <Icon
@@ -467,7 +548,8 @@ const Drinks = ({navigation}) => {
           data={filterData}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{paddingBottom: 20}}
+          contentContainerStyle={{paddingBottom: 100}}
+          scrollEventThrottle={1}
           renderItem={({item}) => (
             <CardMenu
               item={item}
@@ -485,7 +567,7 @@ const Drinks = ({navigation}) => {
   function renderOrderCheck() {
     return (
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => {
@@ -515,9 +597,9 @@ const Drinks = ({navigation}) => {
             {/* close Modal */}
             <TouchableOpacity
               onPress={() => closeModal()}
-              style={{marginBottom: 10, alignSelf: 'center'}}>
+              style={{marginBottom: 10, alignSelf: 'flex-end'}}>
               <Icon
-                name="arrow-collapse-down"
+                name="close-circle-outline"
                 size={25}
                 color={COLORS.button}
               />
@@ -620,52 +702,39 @@ const Drinks = ({navigation}) => {
                 width: '100%',
                 flexDirection: 'row',
                 marginTop: 60,
+                alignItems: 'center',
+                justifyContent: 'center',
               }}>
-              <TouchableOpacity
-                onPress={() => toShoppingCart()}
-                style={{
-                  height: 40,
-                  flex: 0.3,
-                  backgroundColor: `${COLORS.button}77`,
-                  borderRadius: 5,
-                  borderWidth: 1,
-                  borderColor: COLORS.button,
-                  marginRight: 10,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'row',
-                }}>
-                <Icon name="basket-fill" color={COLORS.secondary} size={25} />
-                <Text
+              {uploading ? (
+                <View style={{alignSelf: 'center'}}>
+                  <ActivityIndicator size="large" color="#a0937d" />
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => toShoppingCart()}
                   style={{
-                    color: COLORS.secondary,
-                    fontSize: 12,
-                    marginLeft: 5,
+                    height: 40,
+                    flex: 1,
+                    backgroundColor: `${COLORS.button}77`,
+                    borderRadius: 5,
+                    borderWidth: 1,
+                    borderColor: COLORS.button,
+                    marginRight: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
                   }}>
-                  kulkas ku
-                </Text>
-              </TouchableOpacity>
-
-              {/* Buy Now */}
-              <TouchableOpacity
-                style={{
-                  height: 40,
-                  flex: 0.7,
-                  backgroundColor: `${COLORS.button}77`,
-                  borderRadius: 5,
-                  borderWidth: 1,
-                  borderColor: COLORS.button,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'row',
-                }}>
-                <Icon
-                  name="hand-pointing-up"
-                  color={COLORS.secondary}
-                  size={25}
-                />
-                <Text style={{color: COLORS.secondary}}>Buy Now</Text>
-              </TouchableOpacity>
+                  <Icon name="basket-fill" color={COLORS.secondary} size={25} />
+                  <Text
+                    style={{
+                      color: COLORS.secondary,
+                      fontSize: 12,
+                      marginLeft: 5,
+                    }}>
+                    kulkas ku
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -673,14 +742,215 @@ const Drinks = ({navigation}) => {
     );
   }
 
+  // Modal Pilih Outlet (pop up modal)
+  function renderModalOutlet() {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={outletVisible}
+        onRequestClose={() => {
+          setOutletVisible(!outletVisible);
+        }}>
+        <View
+          style={{
+            alignItems: 'center',
+            width: SIZES.width,
+            height: SIZES.height,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            position: 'absolute',
+            bottom: 0,
+            justifyContent: 'flex-end',
+          }}>
+          <View
+            style={{
+              backgroundColor: COLORS.primary,
+              width: SIZES.width,
+              height: 400,
+              borderTopRightRadius: 30,
+              borderTopLeftRadius: 30,
+              padding: SIZES.padding * 2,
+              paddingTop: SIZES.padding,
+            }}>
+            <View style={{flexDirection: 'row'}}>
+              {orderVia.map((item, index) => (
+                <TouchableOpacity
+                  onPress={() => onSelectVia(item.name)}
+                  key={index}
+                  style={{
+                    flexDirection: 'row',
+                    padding: 10,
+                    borderWidth: 1,
+                    borderColor: COLORS.button,
+                    marginRight: 20,
+                    borderRadius: 20,
+                    backgroundColor:
+                      selectedVia === item.name
+                        ? `${COLORS.button}55`
+                        : 'transparent',
+                  }}>
+                  <Text style={{color: COLORS.secondary, fontWeight: '800'}}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <FlatList
+              data={outlets}
+              keyExtractor={item => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{paddingBottom: 10}}
+              renderItem={({item, index}) => (
+                <TouchableOpacity
+                  onPress={() => onSelectOutlet(item)}
+                  activeOpacity={0.9}
+                  style={{
+                    width: SIZES.width * 0.85,
+                    flexDirection: 'row',
+                    marginVertical: 5,
+                    borderWidth: selectedOutlet === item ? 1 : 0,
+                    borderColor: COLORS.button,
+                    padding: 10,
+                    borderRadius: 5,
+                  }}>
+                  <Image
+                    source={images.outlet}
+                    resizeMode="contain"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      alignSelf: 'center',
+                      marginRight: 20,
+                    }}
+                  />
+                  <View
+                    style={{
+                      width: '80%',
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: COLORS.secondary,
+                        fontWeight: 'bold',
+                      }}>
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={{
+                        textAlign: 'justify',
+                        color: COLORS.secondary,
+                        fontSize: 12,
+                      }}>
+                      {item.alamat}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              onPress={() => storeDataOutlet(selectedVia, selectedOutlet)}
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: COLORS.button,
+                borderRadius: 3,
+                alignSelf: 'center',
+                width: '80%',
+                padding: 10,
+                backgroundColor: `${COLORS.button}55`,
+                marginTop: 10,
+              }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: COLORS.secondary,
+                  fontWeight: 'bold',
+                }}>
+                {data.via === 'Pickup' ? 'Pickup Order!' : 'Delivery Now!'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* close Modal */}
+            <TouchableOpacity
+              onPress={() => setOutletVisible(!outletVisible)}
+              style={{position: 'absolute', right: 10, top: 10}}>
+              <Icon
+                name="close-circle-outline"
+                size={30}
+                color={COLORS.button}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  //menampilkan tombol kulkas
+  function renderToFridge() {
+    return (
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Kulkas')}
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: SIZES.width * 0.8,
+          position: 'absolute',
+          bottom: 70,
+          backgroundColor: `${'#85603f'}`,
+          alignSelf: 'center',
+          borderBottomLeftRadius: 50,
+          borderTopRightRadius: 50,
+          borderTopLeftRadius: 5,
+          borderBottomRightRadius: 5,
+          shadowColor: '#fff',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+
+          elevation: 5,
+          elevation: 7,
+          padding: 5,
+          paddingLeft: 30,
+          paddingRight: 30,
+        }}>
+        <View>
+          <Text style={{color: '#fff', fontSize: 12}}>{totalQty} Items</Text>
+          <Text style={{color: '#fff', marginTop: 5}}>Rp {totalPrice}</Text>
+        </View>
+        <Icon name="fridge-outline" size={25} color="#fff" />
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <RenderBackground />
       {renderHeader()}
-      {/* {renderHeaderModal()} */}
       {renderCategories()}
       {renderMenu()}
       {renderOrderCheck()}
+      {renderModalOutlet()}
+      {totalQty === 0 ? <View /> : renderToFridge()}
+      {!bg ? (
+        <Image
+          source={images.bg}
+          resizeMode="contain"
+          style={{
+            width: 380,
+            height: 380,
+            position: 'absolute',
+            bottom: 200,
+            right: 0,
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 };

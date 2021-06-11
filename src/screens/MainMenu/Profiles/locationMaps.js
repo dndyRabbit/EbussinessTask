@@ -1,8 +1,10 @@
-import React, {useState, useEffect} from 'react';
-import {ActivityIndicator, TouchableOpacity, Text} from 'react-native';
+import React, {useState, useEffect, useContext} from 'react';
+import {ActivityIndicator, TouchableOpacity, Text, Alert} from 'react-native';
 import MapView, {Marker, PROVIDER_GOOGLE} from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import {images, COLORS, SIZES} from '../../../constants';
+import firestore from '@react-native-firebase/firestore';
+import {AuthContext} from '../../../AppNavigator/AuthProvider';
 
 const initialState = {
   latitude: null,
@@ -13,6 +15,8 @@ const initialState = {
 
 const locationMaps = ({navigation}) => {
   const [currentPosition, setCurrentPosition] = useState(initialState);
+
+  const {user} = useContext(AuthContext);
 
   useEffect(() => {
     console.log(currentPosition);
@@ -30,6 +34,22 @@ const locationMaps = ({navigation}) => {
     );
   }, []);
 
+  const handleUpdateLocation = () => {
+    firestore()
+      .collection('users')
+      .doc(user.uid)
+      .update({
+        mapLocation: currentPosition,
+      })
+      .then(() => {
+        Alert.alert(
+          'Location Updated',
+          'Your Location has been updated successfully!',
+        );
+        navigation.navigate('AlamatMaps');
+      });
+  };
+
   return currentPosition.latitude ? (
     <>
       <MapView
@@ -39,12 +59,7 @@ const locationMaps = ({navigation}) => {
         showsUserLocation
       />
       <TouchableOpacity
-        onPress={() =>
-          navigation.navigate('userProfiles', {
-            latitude: currentPosition.latitude,
-            longitude: currentPosition.longitude,
-          })
-        }
+        onPress={() => handleUpdateLocation()}
         style={{
           width: '90%',
           height: 40,
