@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "610554371408",
+    "project_id": "ebussinesstask",
+    "storage_bucket": "ebussinesstask.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:610554371408:android:545270e01d64bc716c6055",
+        "android_client_info": {
+          "package_name": "com.ebussinesstask"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "610554371408-s82j2g8ngn1eh4u33g3abcr0bfka67s3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUCpVvQZ6OE0nDA5ueHjWM96pD5h2MCZw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "610554371408-s82j2g8ngn1eh4u33g3abcr0bfka67s3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
